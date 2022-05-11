@@ -1,0 +1,74 @@
+log_schema:
+  timestamp_key: "@timestamp"
+data_dir: ./vector/data
+api:
+  enabled: true
+sources:
+  generate_syslog:
+    type: file
+    include:
+      - "./vector/data/*.log"
+    #read_from: beginning
+
+transforms:
+  transform_syslog:
+    type: add_fields
+    inputs:
+      - generate_syslog
+    fields:
+      component: test1
+      workspace: test2
+      release: test3
+
+  my_transform_id:
+    type: remap
+    inputs:
+      - generate_syslog
+    source: |-
+      . = parse_json!(.message)
+
+  filter_task_log:
+    type: filter
+    inputs:
+      - my_transform_id
+    condition: .log.dag_id == "" || .log.dag_id != ""
+
+  transform_task_log:
+    type: remap
+    inputs:
+      - filter_task_log
+    source: |-
+      . = parse_json!(.message)
+      .dag_id = .log.dag_id
+      .name   = "vishnuram"
+
+sinks:
+  out:
+    type: elasticsearch
+    inputs:
+      - transform_syslog
+    mode: bulk
+    compression: none
+    endpoint: "http://localhost:9200"
+    #auth:
+    #  strategy: "basic"
+    #  user: astro001
+    #  password : KNF3r6YFQsgV6FHoUY4kpkj6kZg60KYJ
+    bulk:
+      index: "vector.${RELEASE:--}.%Y-%m-%d"
+      action: create
+
+  task_log_out:
+    type: elasticsearch
+    inputs:
+      - transform_task_log
+    mode: bulk
+    compression: none
+    endpoint: "http://localhost:9200"
+    #auth:
+    #  strategy: "basic"
+    #  user: astro001
+    #  password : KNF3r6YFQsgV6FHoUY4kpkj6kZg60KYJ
+    bulk:
+      index: "vector.${RELEASE:--}.%Y-%m-%d"
+      action: create

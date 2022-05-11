@@ -1,5 +1,5 @@
 log_schema:
-  timestamp_key : "@timestamp"
+  timestamp_key: "@timestamp"
 data_dir: ./vector/data
 api:
   enabled: true
@@ -27,14 +27,12 @@ transforms:
     source: |-
       . = parse_json!(.message)
 
-
   filter_task_log:
     type: filter
     inputs:
       - my_transform_id
-    condition: 
-      .log.dag_id == "" || .log.dag_id != ""
-    
+    condition: .log.dag_id == "" || .log.dag_id != ""
+
   transform_task_log:
     type: remap
     inputs:

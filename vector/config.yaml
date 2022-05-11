@@ -1,6 +1,8 @@
 log_schema:
   timestamp_key : "@timestamp"
-data_dir: ./data
+data_dir: ./vector/data
+api:
+  enabled: true
 sources:
   generate_syslog:
     type: file

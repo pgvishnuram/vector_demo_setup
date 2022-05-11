@@ -7,8 +7,8 @@ sources:
   generate_syslog:
     type: file
     include:
-      - "data/*.log"
-    read_from: beginning
+      - "./vector/data/*.log"
+    #read_from: beginning
 
 transforms:
   transform_syslog:

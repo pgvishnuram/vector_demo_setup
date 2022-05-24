@@ -1,5 +1,3 @@
-log_schema:
-  timestamp_key: "@timestamp"
 data_dir: ./vector/data
 api:
   enabled: true
@@ -16,26 +14,47 @@ transforms:
     inputs:
       - generate_syslog
     fields:
-      component: test1
-      workspace: test2
-      release: test3
+      component: test100
+      workspace: test200
+      release: test300
+
+  my_transform_id:
+    type: remap
+    inputs:
+      - generate_syslog
+    source: |-
+      . = parse_json!(.message)
+
+  filter_task_log:
+    type: filter
+    inputs:
+      - my_transform_id
+    condition: .dag_id == "" || .dag_id != ""
 
   transform_task_log:
     type: remap
     inputs:
-      - transform_syslog
+      - filter_task_log
     source: |-
       # Parse Syslog input. The "!" means that the script should abort on error.
       . = parse_json!(.message)
-      .@timestamp = parse_timestamp(.timestamp, "%Y-%m-%dT%H:%M:%S%Z") ?? now()
-      .offset =  to_int(now()) * 1000000000 + to_unix_timestamp(now())
-      .check_log_id = exists(.log_id)
-      if .check_log_id != true {
-        .log_id = join!([.dag_id, .task_id, .execution_date, .try_number], "_")
-      }
+      .dag_id = "vishnuramnewdata"
+      @timestamp = date
+      .offset =  to_int(now()) * pow(10 , 9)
 
 sinks:
   out:
+    type: elasticsearch
+    inputs:
+      - transform_syslog
+    mode: bulk
+    compression: none
+    endpoint: "http://localhost:9200"
+    bulk:
+      index: "vector.airflow.%Y-%m-%d"
+      action: create
+
+  task_log_out:
     type: elasticsearch
     inputs:
       - transform_task_log
@@ -47,10 +66,5 @@ sinks:
     #  user: astro001
     #  password : KNF3r6YFQsgV6FHoUY4kpkj6kZg60KYJ
     bulk:
-      index: "vector.${RELEASE:--}.%Y-%m-%d"
+      index: "vector.airflow.%Y-%m-%d"
       action: create
-
-  tapdata:
-    type: blackhole
-    inputs:
-      - transform_task_log

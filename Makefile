@@ -10,5 +10,9 @@ install-es: ## Install ElasticSearch Service
 	docker-compose up -d
 
 .PHONY: cleanup-es
-cleanup-es: ## Cleanup ElasticSearch Service
+cleanup-es: ## Cleanup ElasticSearch  and data
 	docker-compose down -v
+
+.PHONY: status
+status: ## docker status
+	docker-compose ps

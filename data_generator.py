@@ -1,11 +1,12 @@
 import json
+from random import randint
 
 
 for i in range(1000):
     dictionary = {
         "asctime": "2022-05-09 17:51:14,381",
         "filename": "taskinstance.py",
-        "lineno": i,
+        "lineno": randint(0, 10000),
         "levelname": "INFO",
         "message": "Dependencies all met for <TaskInstance: branch_and_subdag.subdag_1 manual__2022-05-09T17:49:43.711425+00:00 [queued]>",
         "offset": 1652118674381508608,

@@ -12,13 +12,14 @@ sources:
 
 transforms:
   transform_syslog:
-    type: add_fields
+    type: remap
     inputs:
       - generate_syslog
-    fields:
-      component: test1
-      workspace: test2
-      release: test3
+    source: |
+      .component = "${COMPONENT:--}"
+      .workspace = "${WORKSPACE:--}"
+      .release = "${RELEASE:--}"
+      .date_nano = parse_timestamp!(.@timestamp, format: "%Y-%m-%dT%H:%M:%S.%f%Z")
 
   transform_task_log:
     type: remap
@@ -28,11 +29,11 @@ transforms:
       # Parse Syslog input. The "!" means that the script should abort on error.
       . = parse_json!(.message)
       .@timestamp = parse_timestamp(.timestamp, "%Y-%m-%dT%H:%M:%S%Z") ?? now()
-      .offset = to_int(now()) * 1000000000 + to_unix_timestamp(now()) * 1000000
       .check_log_id = exists(.log_id)
       if .check_log_id != true {
-        .log_id = join!([.dag_id, .task_id, .execution_date, .try_number], "_")
+      .log_id = join!([.dag_id, .task_id, .execution_date, .try_number], "_")
       }
+      .offset = to_int(now()) * 1000000000 + to_unix_timestamp(now()) * 1000000
 
 sinks:
   out:
